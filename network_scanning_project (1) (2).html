@@ -1,0 +1,894 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .app { display: flex; flex-direction: column; height: 100vh; min-height: 600px; }
+
+  /* Header */
+  .header {
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-red { background: #ff5f57; }
+  .dot-yellow { background: #febc2e; }
+  .dot-green { background: #28c840; }
+  .header-title {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    color: #8b949e;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .badge-green { background: #0d4429; color: #3fb950; }
+  .badge-yellow { background: #3d2e00; color: #d29922; }
+  .badge-red { background: #3d0c0c; color: #f85149; }
+
+  /* Main layout */
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* Left panel: controls */
+  .sidebar {
+    width: 280px;
+    background: #161b22;
+    border-right: 1px solid #30363d;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .panel-section {
+    padding: 16px;
+    border-bottom: 1px solid #21262d;
+  }
+
+  .panel-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b949e;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .field-label {
+    font-size: 12px;
+    color: #8b949e;
+    margin-bottom: 4px;
+  }
+
+  .field-input {
+    width: 100%;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: #c9d1d9;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-input:focus { border-color: #388bfd; }
+
+  .select-input {
+    width: 100%;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: #c9d1d9;
+    font-size: 12px;
+    margin-bottom: 10px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .scan-btn {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, #238636, #2ea043);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.3px;
+  }
+  .scan-btn:hover { opacity: 0.9; }
+  .scan-btn:active { transform: scale(0.98); }
+  .scan-btn:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+
+  .stop-btn {
+    width: 100%;
+    padding: 10px;
+    background: #21262d;
+    border: 1px solid #f85149;
+    border-radius: 6px;
+    color: #f85149;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.2s;
+  }
+  .stop-btn:hover { background: #3d0c0c; }
+
+  /* Scan mode radio group */
+  .radio-group { display: flex; flex-direction: column; gap: 6px; }
+  .radio-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .radio-item:hover { background: #21262d; }
+  .radio-item.selected { border-color: #388bfd; background: #0c2d6b20; }
+  .radio-item input { margin-top: 2px; accent-color: #388bfd; cursor: pointer; }
+  .radio-label { font-size: 12px; color: #c9d1d9; font-weight: 500; }
+  .radio-desc { font-size: 11px; color: #8b949e; margin-top: 1px; }
+
+  /* Port preset chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    border: 1px solid #30363d;
+    cursor: pointer;
+    color: #8b949e;
+    transition: all 0.15s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .chip:hover { border-color: #388bfd; color: #58a6ff; background: #0c2d6b20; }
+  .chip.active { border-color: #388bfd; color: #58a6ff; background: #0c2d6b40; }
+
+  /* Right panel: terminal + results */
+  .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 0 16px;
+  }
+  .tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #8b949e;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab:hover { color: #c9d1d9; }
+  .tab.active { color: #e6edf3; border-bottom-color: #388bfd; }
+
+  .tab-content { flex: 1; overflow: hidden; display: none; }
+  .tab-content.active { display: flex; flex-direction: column; }
+
+  /* Terminal */
+  .terminal {
+    flex: 1;
+    background: #0d1117;
+    overflow-y: auto;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.65;
+  }
+
+  .t-prompt { color: #3fb950; }
+  .t-cmd { color: #e6edf3; }
+  .t-info { color: #58a6ff; }
+  .t-success { color: #3fb950; }
+  .t-warn { color: #d29922; }
+  .t-error { color: #f85149; }
+  .t-muted { color: #484f58; }
+  .t-host { color: #e6edf3; font-weight: 700; }
+  .t-port-open { color: #3fb950; }
+  .t-port-closed { color: #484f58; }
+  .t-port-filtered { color: #d29922; }
+  .t-service { color: #79c0ff; }
+  .t-os { color: #d2a8ff; }
+
+  .t-line { display: block; white-space: pre; }
+  .t-cursor { display: inline-block; width: 8px; height: 14px; background: #58a6ff; animation: blink 1s step-end infinite; vertical-align: text-bottom; margin-left: 1px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Network map */
+  .netmap { flex: 1; overflow-y: auto; padding: 16px; }
+  .map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+
+  .host-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 14px;
+    transition: border-color 0.2s, transform 0.15s;
+    cursor: pointer;
+  }
+  .host-card:hover { border-color: #388bfd; transform: translateY(-1px); }
+  .host-card.up { border-left: 3px solid #3fb950; }
+  .host-card.down { border-left: 3px solid #484f58; opacity: 0.5; }
+
+  .host-ip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #e6edf3;
+    margin-bottom: 4px;
+  }
+  .host-status {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-up { background: #3fb950; box-shadow: 0 0 5px #3fb950; }
+  .dot-down { background: #484f58; }
+  .host-label { font-size: 11px; color: #8b949e; margin-bottom: 8px; }
+
+  .port-list { display: flex; flex-wrap: wrap; gap: 4px; }
+  .port-tag {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+  .port-open { background: #0d4429; border-color: #238636; color: #3fb950; }
+  .port-filtered { background: #3d2e00; border-color: #9e6a03; color: #d29922; }
+
+  /* Findings panel */
+  .findings { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+
+  .finding-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .finding-card.critical { border-left: 3px solid #f85149; }
+  .finding-card.warning { border-left: 3px solid #d29922; }
+  .finding-card.info { border-left: 3px solid #388bfd; }
+
+  .finding-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .finding-icon { font-size: 16px; }
+  .finding-title { font-weight: 600; font-size: 13px; color: #e6edf3; }
+  .finding-body { font-size: 12px; color: #8b949e; line-height: 1.5; }
+  .finding-tech {
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #79c0ff;
+    background: #0c2d6b30;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #0c2d6b;
+  }
+
+  /* Progress bar */
+  .progress-bar-wrap { padding: 0 16px 12px; }
+  .progress-bar {
+    height: 3px;
+    background: #21262d;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #388bfd, #3fb950);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 0;
+    background: #161b22;
+    border-top: 1px solid #30363d;
+  }
+  .stat {
+    flex: 1;
+    padding: 8px 12px;
+    border-right: 1px solid #21262d;
+    text-align: center;
+  }
+  .stat:last-child { border-right: none; }
+  .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #e6edf3; }
+  .stat-val.green { color: #3fb950; }
+  .stat-val.yellow { color: #d29922; }
+  .stat-val.red { color: #f85149; }
+  .stat-lbl { font-size: 10px; color: #8b949e; margin-top: 1px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #484f58;
+    font-size: 13px;
+    padding: 40px;
+    text-align: center;
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+  .learn-box {
+    background: #0c2d6b20;
+    border: 1px solid #1f6feb50;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #8b949e;
+    line-height: 1.5;
+  }
+  .learn-box strong { color: #58a6ff; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- Header -->
+<div class="header">
+  <div class="header-dot dot-red"></div>
+  <div class="header-dot dot-yellow"></div>
+  <div class="header-dot dot-green"></div>
+  <div class="header-title">nmap-simulator — network scanner v1.0</div>
+  <span class="badge badge-yellow" id="scan-status-badge">IDLE</span>
+</div>
+
+<div class="main">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="panel-section">
+      <div class="panel-title">Target</div>
+      <div class="field-label">IP Range / CIDR</div>
+      <input class="field-input" id="target-input" value="192.168.1.0/24" placeholder="e.g. 192.168.1.0/24">
+
+      <div class="field-label">Port Range</div>
+      <input class="field-input" id="port-input" value="1-1024" placeholder="e.g. 80,443 or 1-1024">
+
+      <div class="chips" style="margin-bottom:10px">
+        <span class="chip" onclick="setPortPreset('22,80,443,3389',this)">Common</span>
+        <span class="chip" onclick="setPortPreset('1-1024',this)">Well-known</span>
+        <span class="chip" onclick="setPortPreset('1-65535',this)">Full</span>
+        <span class="chip active" onclick="setPortPreset('21,22,23,25,53,80,110,143,443,445,3306,3389,8080,8443',this)">Top-14</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Scan Mode</div>
+      <div class="radio-group" id="scan-mode-group">
+        <label class="radio-item selected">
+          <input type="radio" name="scanmode" value="syn" checked>
+          <div>
+            <div class="radio-label">SYN Scan (-sS)</div>
+            <div class="radio-desc">Half-open, stealthy</div>
+          </div>
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="scanmode" value="tcp">
+          <div>
+            <div class="radio-label">TCP Connect (-sT)</div>
+            <div class="radio-desc">Full 3-way handshake</div>
+          </div>
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="scanmode" value="udp">
+          <div>
+            <div class="radio-label">UDP Scan (-sU)</div>
+            <div class="radio-desc">Scan UDP services</div>
+          </div>
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="scanmode" value="os">
+          <div>
+            <div class="radio-label">OS Detection (-O)</div>
+            <div class="radio-desc">Fingerprint the OS</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Timing</div>
+      <select class="select-input" id="timing-select">
+        <option value="0">T0 — Paranoid (very slow)</option>
+        <option value="1">T1 — Sneaky</option>
+        <option value="2">T2 — Polite</option>
+        <option value="3" selected>T3 — Normal</option>
+        <option value="4">T4 — Aggressive</option>
+        <option value="5">T5 — Insane</option>
+      </select>
+
+      <button class="scan-btn" id="scan-btn" onclick="startScan()">▶ Run Scan</button>
+      <button class="stop-btn" id="stop-btn" style="display:none" onclick="stopScan()">■ Stop</button>
+    </div>
+
+    <div class="panel-section" style="border:none; flex:1;">
+      <div class="panel-title">Quick Learn</div>
+      <div class="learn-box"><strong>TCP/IP:</strong> Data travels in packets. Each port = a door. 0–1023 are "well-known" (80 = HTTP, 22 = SSH).</div>
+      <div class="learn-box"><strong>Open port</strong> = service is listening and will accept connections. A potential entry point.</div>
+      <div class="learn-box"><strong>Filtered</strong> = firewall is blocking. No reply means someone is hiding something.</div>
+    </div>
+  </div>
+
+  <!-- Content Area -->
+  <div class="content">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('terminal',this)">Terminal</div>
+      <div class="tab" onclick="switchTab('map',this)">Network Map</div>
+      <div class="tab" onclick="switchTab('findings',this)">Findings</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-bar-wrap" id="progress-wrap" style="display:none">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <!-- Terminal Tab -->
+    <div class="tab-content active" id="tab-terminal">
+      <div class="terminal" id="terminal">
+        <span class="t-line t-muted"># Network Scanner Simulator — Educational Tool</span>
+        <span class="t-line t-muted"># Configure your scan on the left and press Run Scan</span>
+        <span class="t-line t-muted"># All scans are simulated against a fictional network</span>
+        <span class="t-line"> </span>
+        <span class="t-line t-prompt">scanner@kali:~$ <span class="t-cursor"></span></span>
+      </div>
+    </div>
+
+    <!-- Map Tab -->
+    <div class="tab-content" id="tab-map">
+      <div class="netmap">
+        <div class="empty-state" id="map-empty">
+          <div class="empty-icon">🌐</div>
+          <div>No hosts discovered yet</div>
+          <div style="font-size:11px;margin-top:4px">Run a scan to populate the network map</div>
+        </div>
+        <div class="map-grid" id="map-grid" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Findings Tab -->
+    <div class="tab-content" id="tab-findings">
+      <div class="findings" id="findings-panel">
+        <div class="empty-state" id="findings-empty">
+          <div class="empty-icon">🔍</div>
+          <div>No findings yet</div>
+          <div style="font-size:11px;margin-top:4px">Findings appear after a scan completes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-val" id="stat-hosts">0</div>
+        <div class="stat-lbl">Hosts Up</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val green" id="stat-open">0</div>
+        <div class="stat-lbl">Open Ports</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val yellow" id="stat-filtered">0</div>
+        <div class="stat-lbl">Filtered</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val red" id="stat-risks">0</div>
+        <div class="stat-lbl">Risks Found</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="stat-time">0s</div>
+        <div class="stat-lbl">Scan Time</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== SIMULATED NETWORK DATA ==========
+const SIMULATED_HOSTS = [
+  {
+    ip: '192.168.1.1', hostname: 'router.home', mac: 'AA:BB:CC:11:22:33', os: 'Linux 4.4 (OpenWRT)',
+    ports: [
+      { port: 22, state: 'open', service: 'SSH', version: 'OpenSSH 7.2', risk: 'medium' },
+      { port: 23, state: 'open', service: 'Telnet', version: 'GNU inetutils 1.9', risk: 'critical' },
+      { port: 80, state: 'open', service: 'HTTP', version: 'uhttpd 1.0.0', risk: 'info' },
+      { port: 443, state: 'open', service: 'HTTPS', version: 'uhttpd 1.0.0', risk: 'info' },
+    ]
+  },
+  {
+    ip: '192.168.1.10', hostname: 'desktop-win.home', mac: 'DD:EE:FF:44:55:66', os: 'Windows 10 (build 19041)',
+    ports: [
+      { port: 135, state: 'open', service: 'MSRPC', version: 'Microsoft RPC', risk: 'medium' },
+      { port: 139, state: 'open', service: 'NetBIOS', version: 'Samba 4.11', risk: 'medium' },
+      { port: 445, state: 'open', service: 'SMB', version: 'Windows SMB 3.1', risk: 'warning' },
+      { port: 3389, state: 'open', service: 'RDP', version: 'Microsoft Remote Desktop', risk: 'warning' },
+      { port: 8080, state: 'filtered', service: 'HTTP-Alt', version: '', risk: 'info' },
+    ]
+  },
+  {
+    ip: '192.168.1.15', hostname: 'ubuntu-server.home', mac: '11:22:33:44:55:66', os: 'Linux 5.4 (Ubuntu 20.04)',
+    ports: [
+      { port: 22, state: 'open', service: 'SSH', version: 'OpenSSH 8.2', risk: 'info' },
+      { port: 80, state: 'open', service: 'HTTP', version: 'Apache 2.4.41', risk: 'info' },
+      { port: 443, state: 'open', service: 'HTTPS', version: 'Apache 2.4.41', risk: 'info' },
+      { port: 3306, state: 'open', service: 'MySQL', version: 'MySQL 8.0.21', risk: 'critical' },
+      { port: 6379, state: 'filtered', service: 'Redis', version: '', risk: 'info' },
+    ]
+  },
+  {
+    ip: '192.168.1.20', hostname: 'nas.home', mac: '77:88:99:AA:BB:CC', os: 'Linux (Synology DSM 6.2)',
+    ports: [
+      { port: 21, state: 'open', service: 'FTP', version: 'ProFTPD 1.3.5', risk: 'critical' },
+      { port: 22, state: 'open', service: 'SSH', version: 'OpenSSH 7.9', risk: 'info' },
+      { port: 80, state: 'open', service: 'HTTP', version: 'nginx 1.14.0', risk: 'info' },
+      { port: 443, state: 'open', service: 'HTTPS', version: 'nginx 1.14.0', risk: 'info' },
+      { port: 5000, state: 'open', service: 'HTTP (DSM)', version: 'Synology DSM', risk: 'info' },
+      { port: 445, state: 'open', service: 'SMB', version: 'Samba 4.9', risk: 'medium' },
+    ]
+  },
+  {
+    ip: '192.168.1.30', hostname: 'android-phone.home', mac: 'CC:DD:EE:FF:00:11', os: 'Android 11 (Linux 4.14)',
+    ports: [
+      { port: 5555, state: 'open', service: 'ADB', version: 'Android Debug Bridge', risk: 'critical' },
+    ]
+  },
+  {
+    ip: '192.168.1.50', hostname: 'raspberry-pi.home', mac: 'B8:27:EB:AA:BB:CC', os: 'Linux 5.10 (Raspberry Pi OS)',
+    ports: [
+      { port: 22, state: 'open', service: 'SSH', version: 'OpenSSH 8.4', risk: 'info' },
+      { port: 5900, state: 'open', service: 'VNC', version: 'LibVNCServer 0.9.13', risk: 'warning' },
+      { port: 8080, state: 'open', service: 'HTTP-Alt', version: 'Node.js v14', risk: 'info' },
+    ]
+  },
+  {
+    ip: '192.168.1.254', hostname: 'unknown-device.home', mac: 'F0:00:00:00:00:01', os: 'Unknown',
+    ports: [
+      { port: 23, state: 'open', service: 'Telnet', version: 'Unknown telnetd', risk: 'critical' },
+      { port: 80, state: 'open', service: 'HTTP', version: 'GoAhead 2.5', risk: 'medium' },
+    ]
+  },
+  { ip: '192.168.1.5', hostname: 'printer.home', mac: 'A1:B2:C3:D4:E5:F6', os: 'HP Embedded', down: true, ports: [] },
+  { ip: '192.168.1.25', hostname: 'smart-tv.home', mac: '00:11:22:33:44:55', os: 'Tizen 5.0', down: true, ports: [] },
+];
+
+const SERVICE_RISK_INFO = {
+  'Telnet': { sev: 'critical', msg: 'Telnet transmits data in plaintext — credentials are visible on the wire. Replace with SSH immediately.' },
+  'FTP': { sev: 'critical', msg: 'FTP sends passwords in cleartext. Use SFTP or SCP instead.' },
+  'MySQL': { sev: 'critical', msg: 'Database port is publicly exposed. This should be bound to 127.0.0.1 only.' },
+  'ADB': { sev: 'critical', msg: 'Android Debug Bridge is open! This allows full shell access to the device without authentication.' },
+  'SMB': { sev: 'warning', msg: 'SMB exposed on network. Historically vulnerable (EternalBlue, MS17-010). Ensure patches are current.' },
+  'RDP': { sev: 'warning', msg: 'Remote Desktop Protocol is exposed. Use a VPN or restrict by IP. Brute-force attacks are common.' },
+  'VNC': { sev: 'warning', msg: 'VNC can be accessible without strong authentication. Verify password strength and restrict access.' },
+  'MSRPC': { sev: 'medium', msg: 'Microsoft RPC is exposed — used by many Windows services. Can be an attack surface.' },
+  'NetBIOS': { sev: 'medium', msg: 'NetBIOS leaks system info (name, workgroup). Consider disabling if not needed.' },
+  'SSH': { sev: 'info', msg: 'SSH is expected and encrypted. Verify key-based auth is enforced and root login is disabled.' },
+};
+
+const SCAN_MODES = {
+  syn: { flag: '-sS', name: 'SYN Stealth Scan' },
+  tcp: { flag: '-sT', name: 'TCP Connect Scan' },
+  udp: { flag: '-sU', name: 'UDP Scan' },
+  os: { flag: '-O -sV', name: 'OS & Version Detection' },
+};
+
+let scanInterval = null;
+let scanRunning = false;
+let discoveredHosts = [];
+let totalOpen = 0, totalFiltered = 0, totalRisks = 0;
+let scanStartTime = 0;
+let timerInterval = null;
+
+// Radio button highlight
+document.querySelectorAll('input[name=scanmode]').forEach(r => {
+  r.addEventListener('change', () => {
+    document.querySelectorAll('.radio-item').forEach(i => i.classList.remove('selected'));
+    r.closest('.radio-item').classList.add('selected');
+  });
+});
+
+function setPortPreset(ports, el) {
+  document.getElementById('port-input').value = ports;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function termPrint(html, delay=0) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const term = document.getElementById('terminal');
+      const cursor = term.querySelector('.t-cursor');
+      if (cursor) cursor.remove();
+      const span = document.createElement('span');
+      span.className = 't-line';
+      span.innerHTML = html;
+      term.appendChild(span);
+      term.scrollTop = term.scrollHeight;
+      resolve();
+    }, delay);
+  });
+}
+
+function termClear() {
+  const term = document.getElementById('terminal');
+  term.innerHTML = '';
+}
+
+function addCursor() {
+  const term = document.getElementById('terminal');
+  const prompt = document.createElement('span');
+  prompt.className = 't-line';
+  prompt.innerHTML = '<span class="t-prompt">scanner@kali:~$</span> <span class="t-cursor"></span>';
+  term.appendChild(prompt);
+  term.scrollTop = term.scrollHeight;
+}
+
+function setBadge(text, cls) {
+  const b = document.getElementById('scan-status-badge');
+  b.textContent = text;
+  b.className = 'badge ' + cls;
+}
+
+async function startScan() {
+  if (scanRunning) return;
+  scanRunning = true;
+  discoveredHosts = [];
+  totalOpen = 0; totalFiltered = 0; totalRisks = 0;
+
+  const target = document.getElementById('target-input').value || '192.168.1.0/24';
+  const ports = document.getElementById('port-input').value || '1-1024';
+  const mode = document.querySelector('input[name=scanmode]:checked').value;
+  const timing = document.getElementById('timing-select').value;
+  const modeInfo = SCAN_MODES[mode];
+
+  document.getElementById('scan-btn').disabled = true;
+  document.getElementById('stop-btn').style.display = 'block';
+  setBadge('SCANNING', 'badge-yellow');
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('findings-empty').style.display = 'none';
+
+  // Reset map and findings
+  document.getElementById('map-empty').style.display = 'none';
+  document.getElementById('map-grid').style.display = 'grid';
+  document.getElementById('map-grid').innerHTML = '';
+  const findPanel = document.getElementById('findings-panel');
+  findPanel.innerHTML = '';
+
+  // Stats
+  document.getElementById('stat-hosts').textContent = '0';
+  document.getElementById('stat-open').textContent = '0';
+  document.getElementById('stat-filtered').textContent = '0';
+  document.getElementById('stat-risks').textContent = '0';
+
+  // Timer
+  scanStartTime = Date.now();
+  timerInterval = setInterval(() => {
+    document.getElementById('stat-time').textContent = ((Date.now()-scanStartTime)/1000).toFixed(1)+'s';
+  }, 100);
+
+  termClear();
+  switchTab('terminal', document.querySelector('.tab.active') || document.querySelectorAll('.tab')[0]);
+  document.querySelectorAll('.tab')[0].click();
+
+  // Build nmap command
+  const cmd = `nmap ${modeInfo.flag} -p ${ports} -T${timing} --open ${target}`;
+
+  await termPrint(`<span class="t-prompt">scanner@kali:~$</span> <span class="t-cmd">${cmd}</span>`);
+  await termPrint('', 100);
+  await termPrint(`<span class="t-info">Starting Nmap 7.94 — ${modeInfo.name}</span>`, 150);
+  await termPrint(`<span class="t-muted">Nmap scan report for ${target}</span>`, 200);
+  await termPrint(`<span class="t-muted">Scanning ${SIMULATED_HOSTS.length} hosts [ports: ${ports}] [timing: T${timing}]</span>`, 250);
+  await termPrint('', 300);
+
+  const totalHosts = SIMULATED_HOSTS.length;
+  let processed = 0;
+
+  // Scan hosts one by one
+  const processHost = async (hostIdx) => {
+    if (!scanRunning || hostIdx >= SIMULATED_HOSTS.length) {
+      finishScan();
+      return;
+    }
+
+    const host = SIMULATED_HOSTS[hostIdx];
+    const progress = (hostIdx / SIMULATED_HOSTS.length) * 100;
+    document.getElementById('progress-fill').style.width = progress + '%';
+
+    if (host.down) {
+      await termPrint(`<span class="t-muted">Host ${host.ip} (${host.hostname}) — down, skipping</span>`, 0);
+      processed++;
+      setTimeout(() => processHost(hostIdx + 1), 200);
+      return;
+    }
+
+    discoveredHosts.push(host);
+    const hostsUp = discoveredHosts.length;
+    document.getElementById('stat-hosts').textContent = hostsUp;
+
+    await termPrint('', 0);
+    await termPrint(`<span class="t-success">Nmap scan report for <span class="t-host">${host.hostname}</span> (${host.ip})</span>`, 0);
+    await termPrint(`<span class="t-info">Host is up (0.0${Math.floor(Math.random()*9)+1}2s latency). MAC: ${host.mac}</span>`, 80);
+
+    if (mode === 'os') {
+      await termPrint(`<span class="t-os">OS: ${host.os}</span>`, 120);
+    }
+
+    await termPrint(`<span class="t-muted">PORT       STATE     SERVICE        VERSION</span>`, 150);
+
+    let openCount = 0, filtCount = 0;
+
+    for (const p of host.ports) {
+      const stateColor = p.state === 'open' ? 't-port-open' : (p.state === 'filtered' ? 't-port-filtered' : 't-port-closed');
+      const portPadded = (p.port + '/' + (mode==='udp'?'udp':'tcp')).padEnd(10);
+      const statePadded = p.state.padEnd(9);
+      const svcPadded = p.service.padEnd(14);
+      const ver = (mode === 'os' || mode === 'tcp') ? p.version : '';
+      await termPrint(`<span class="${stateColor}">${portPadded} ${statePadded} <span class="t-service">${svcPadded}</span> ${ver}</span>`, 60);
+
+      if (p.state === 'open') { openCount++; totalOpen++; }
+      if (p.state === 'filtered') { filtCount++; totalFiltered++; }
+
+      // Risk counting
+      if (p.risk === 'critical' || p.risk === 'warning') {
+        totalRisks++;
+        document.getElementById('stat-risks').textContent = totalRisks;
+      }
+    }
+
+    document.getElementById('stat-open').textContent = totalOpen;
+    document.getElementById('stat-filtered').textContent = totalFiltered;
+
+    // Add to map
+    addHostCard(host, mode);
+
+    // Add findings
+    for (const p of host.ports) {
+      if (p.state === 'open' && SERVICE_RISK_INFO[p.service]) {
+        addFinding(host, p, SERVICE_RISK_INFO[p.service]);
+      }
+    }
+
+    processed++;
+    setTimeout(() => processHost(hostIdx + 1), 600 + Math.random()*400);
+  };
+
+  setTimeout(() => processHost(0), 400);
+}
+
+function addHostCard(host, mode) {
+  const grid = document.getElementById('map-grid');
+  const card = document.createElement('div');
+  card.className = 'host-card up';
+
+  const openPorts = host.ports.filter(p => p.state === 'open');
+  const filtPorts = host.ports.filter(p => p.state === 'filtered');
+
+  const portTagsHtml = [
+    ...openPorts.map(p => `<span class="port-tag port-open">${p.port}/${p.service}</span>`),
+    ...filtPorts.map(p => `<span class="port-tag port-filtered">${p.port}</span>`)
+  ].join('');
+
+  const osHtml = (mode === 'os') ? `<div class="host-label" style="color:#d2a8ff;margin-bottom:4px">${host.os}</div>` : '';
+
+  card.innerHTML = `
+    <div class="host-ip">${host.ip}</div>
+    <div class="host-status">
+      <span class="status-dot dot-up"></span>
+      <span style="color:#3fb950;font-size:11px">UP</span>
+      <span style="color:#484f58;font-size:11px;margin-left:4px">— ${host.hostname}</span>
+    </div>
+    ${osHtml}
+    <div class="port-list">${portTagsHtml || '<span style="font-size:11px;color:#484f58">No open ports</span>'}</div>
+  `;
+  grid.appendChild(card);
+}
+
+function addFinding(host, port, risk) {
+  const panel = document.getElementById('findings-panel');
+
+  const icons = { critical: '🔴', warning: '🟡', medium: '🟠', info: 'ℹ️' };
+  const severityMap = { critical: 'critical', warning: 'warning', medium: 'warning', info: 'info' };
+
+  const card = document.createElement('div');
+  card.className = `finding-card ${severityMap[risk.sev] || 'info'}`;
+  card.innerHTML = `
+    <div class="finding-header">
+      <span class="finding-icon">${icons[risk.sev]}</span>
+      <span class="finding-title">${port.service} on ${host.ip}:${port.port}</span>
+      <span class="badge badge-${risk.sev==='critical'?'red':risk.sev==='warning'?'yellow':'green'}" style="margin-left:auto;font-size:10px">${risk.sev.toUpperCase()}</span>
+    </div>
+    <div class="finding-body">${risk.msg}</div>
+    ${port.version ? `<div class="finding-tech">Version: ${port.version}</div>` : ''}
+  `;
+  panel.appendChild(card);
+}
+
+function finishScan() {
+  clearInterval(timerInterval);
+  const elapsed = ((Date.now() - scanStartTime) / 1000).toFixed(2);
+  document.getElementById('stat-time').textContent = elapsed + 's';
+  document.getElementById('progress-fill').style.width = '100%';
+  setBadge('DONE', 'badge-green');
+  document.getElementById('scan-btn').disabled = false;
+  document.getElementById('stop-btn').style.display = 'none';
+  scanRunning = false;
+
+  setTimeout(async () => {
+    const term = document.getElementById('terminal');
+    await termPrint('');
+    await termPrint(`<span class="t-muted">─────────────────────────────────────────────────────</span>`);
+    await termPrint(`<span class="t-success">Nmap done: ${SIMULATED_HOSTS.length} hosts scanned in ${elapsed} seconds</span>`);
+    await termPrint(`<span class="t-info">  ${discoveredHosts.length} hosts up | ${totalOpen} open ports | ${totalFiltered} filtered | ${totalRisks} risks found</span>`);
+    await termPrint('');
+    addCursor();
+    document.getElementById('progress-fill').style.width = '0%';
+    document.getElementById('progress-wrap').style.display = 'none';
+  }, 300);
+}
+
+function stopScan() {
+  scanRunning = false;
+  clearInterval(timerInterval);
+  setBadge('STOPPED', 'badge-red');
+  document.getElementById('scan-btn').disabled = false;
+  document.getElementById('stop-btn').style.display = 'none';
+  termPrint('<span class="t-error">Scan aborted by user.</span>').then(() => addCursor());
+  document.getElementById('progress-wrap').style.display = 'none';
+}
+</script>
+</body>
+</html>
